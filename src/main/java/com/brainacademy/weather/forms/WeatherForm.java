@@ -1,19 +1,17 @@
 package com.brainacademy.weather.forms;
 
 import com.brainacademy.weather.model.OpenWeatherMap;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.brainacademy.weather.utils.JsonUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.io.IOException;
 import java.net.URL;
+import java.util.concurrent.CancellationException;
 
 public class WeatherForm {
-    public static final String BASE_WEATHER_API_URL = "http://api.openweathermap.org/data/2.5/weather?appid=8d243a205cc370acdbfea2f12c757689";
-    public static final String IMAGE_URL = "http://openweathermap.org/img/w/%s.png";
-    private JButton closeButton;
+    private static final String BASE_WEATHER_API_URL = "http://api.openweathermap.org/data/2.5/weather?appid=8d243a205cc370acdbfea2f12c757689";
+    private static final String IMAGE_URL = "http://openweathermap.org/img/w/%s.png";
+
     private JButton refreshButton;
     private JLabel cityLabel;
     private JLabel iconLabel;
@@ -23,30 +21,50 @@ public class WeatherForm {
     private JLabel humidityLabel;
     private JLabel windLabel;
     private JLabel pressureLabel;
+    private JPanel infoPanel;
 
     public void refresh() {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            mapper.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true);
-
-            OpenWeatherMap openWeatherMap = mapper.readValue(new URL(BASE_WEATHER_API_URL + "&q=London"), OpenWeatherMap.class);
-            cityLabel.setText(openWeatherMap.getName());
-
-            URL iconUrl = new URL(String.format(IMAGE_URL, openWeatherMap.getWeather().get(0).getIcon()));
-            iconLabel.setIcon(new ImageIcon(ImageIO.read(iconUrl)));
-            tempLabel.setText(Math.round(openWeatherMap.getMain().getTemp() - 273) + "°C");
-            cloudsLabel.setText(Math.round(openWeatherMap.getClouds().getAll()) + "%");
-            humidityLabel.setText(Math.round(openWeatherMap.getMain().getHumidity()) + "%");
-            windLabel.setText(openWeatherMap.getWind().getSpeed() + "m/s");
-            pressureLabel.setText(openWeatherMap.getMain().getPressure() + "hpa");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        SwingWorker<OpenWeatherMap, Void> swingWorker = new WeatherSwingWorker("London");
+        swingWorker.execute();
     }
 
     public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    private class WeatherSwingWorker extends SwingWorker<OpenWeatherMap, Void> {
+        private final String city;
+
+        private WeatherSwingWorker(String city) {
+            this.city = city;
+        }
+
+
+        @Override
+        protected OpenWeatherMap doInBackground() throws Exception {
+            URL url = new URL(BASE_WEATHER_API_URL + "&q=" + city);
+            return JsonUtils.readValue(url, OpenWeatherMap.class);
+        }
+
+        @Override
+        protected void done() {
+            OpenWeatherMap openWeatherMap = null;
+            try {
+                openWeatherMap = get();
+                cityLabel.setText(openWeatherMap.getName());
+
+                URL iconUrl = new URL(String.format(IMAGE_URL, openWeatherMap.getWeather().get(0).getIcon()));
+                iconLabel.setIcon(new ImageIcon(ImageIO.read(iconUrl)));
+                tempLabel.setText(Math.round(openWeatherMap.getMain().getTemp() - 273) + "°C");
+                cloudsLabel.setText(Math.round(openWeatherMap.getClouds().getAll()) + "%");
+                humidityLabel.setText(Math.round(openWeatherMap.getMain().getHumidity()) + "%");
+                windLabel.setText(openWeatherMap.getWind().getSpeed() + "m/s");
+                pressureLabel.setText(openWeatherMap.getMain().getPressure() + "hpa");
+            } catch (CancellationException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
