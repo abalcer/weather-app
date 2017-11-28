@@ -63,7 +63,10 @@ public class WeatherForm {
             } catch (CancellationException e) {
                 e.printStackTrace();
             } catch (Exception e) {
-                e.printStackTrace();
+                JOptionPane.showMessageDialog(rootPanel,
+                        "Unable to get result",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
     }
