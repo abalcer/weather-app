@@ -1,7 +1,19 @@
 group 'com.brainacademy'
 version '1.0-SNAPSHOT'
 
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.8.RELEASE")
+    }
+}
+
 apply plugin: 'java'
+apply plugin: 'war'
+apply plugin: 'org.springframework.boot'
 
 sourceCompatibility = 1.8
 
@@ -11,6 +23,12 @@ repositories {
 
 dependencies {
     compile 'com.intellij:forms_rt:7.0.3'
+
+    compile "org.springframework.boot:spring-boot-starter-web"
+    compile "org.springframework.boot:spring-boot-devtools"
+
+    compile 'javax.servlet:jstl:1.2'
+    providedRuntime('org.apache.tomcat.embed:tomcat-embed-jasper')
 
     compile 'com.fasterxml.jackson.core:jackson-core:2.9.2'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.9.2'
